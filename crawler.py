@@ -135,6 +135,11 @@ def check_sheet():
         complete.append('weekly')
     if now.hour == 0:
         complete.append('daily')
+    if now.hour == 1:
+        try:
+            update_lyrics()
+        except:
+            pass
 
     while True:
         try:
@@ -169,12 +174,23 @@ def check_sheet():
         if reaction == '0':
             reaction = ''
 
-        try:
-            views = YouTube(f'https://youtu.be/{_id}').views
-            if reaction != '':
-                views += YouTube(f'https://youtu.be/{reaction}').views
-        except:
-            continue
+        while True:
+            count = 0
+            try:
+                views = YouTube(f'https://youtu.be/{_id}').views
+                if reaction != '':
+                    views += YouTube(f'https://youtu.be/{reaction}').views
+                break
+            except:
+                if count > 5:
+                    query = cursor.execute(f'SELECT * FROM total WHERE id = "{_id}"').fetchone()
+                    if not query:
+                        views = 0
+                    else:
+                        views = int(query[6])
+                    break
+                count += 1
+                pass
 
         date = v[c['date']].replace('.', '')
         remix = v[c['remix']]
@@ -198,8 +214,6 @@ def check_sheet():
             insert(charts, cursor, _id, views, 'weekly')
         if now.hour == 0:
             insert(charts, cursor, _id, views, 'daily')
-        if now.hour == 1:
-            update_lyrics()
 
     for v in values[1:]:
         url = v[c['url']]
@@ -223,11 +237,9 @@ def check_sheet():
         art.append((a, ','.join(artists[a])))
     cursor.executemany('INSERT INTO artists VALUES(?, ?)', art)
     cursor.execute(f'UPDATE updated SET time = "{int(time.time())}"')
+
     cursor.execute('DELETE FROM total')
-    try:
-        cursor.executemany('INSERT INTO total VALUES (?, ?, ?, ?, ?, ?, ?, ?)', charts['total'])
-    except sqlite3.IntegrityError:
-        pass
+    cursor.executemany('INSERT INTO total VALUES (?, ?, ?, ?, ?, ?, ?, ?)', charts['total'])
 
     for t in complete:
         cursor.execute(f'DELETE FROM {t}')
