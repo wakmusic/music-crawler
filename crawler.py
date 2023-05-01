@@ -5,19 +5,19 @@ import gspread
 import schedule
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
-from pytube import YouTube
+from waktube import YouTube
 
-with open('config.json', encoding='utf-8-sig') as file:
+with open("config.json", encoding="utf-8-sig") as file:
     js = json.load(file)
 
 
 def get_last(cursor, _id, t):
     data = cursor.execute(f'SELECT * FROM total WHERE id = "{_id}"').fetchone()
     if data:
-        field = 'views'
-        if t != 'total':
-            field = 'increase'
-        songs = cursor.execute(f'SELECT * FROM {t} ORDER BY {field} DESC').fetchall()
+        field = "views"
+        if t != "total":
+            field = "increase"
+        songs = cursor.execute(f"SELECT * FROM {t} ORDER BY {field} DESC").fetchall()
         last = 1
         for song in songs:
             if song[0] == _id:
@@ -51,10 +51,14 @@ def insert(charts, cursor, _id, views, t):
 
 def update_lyrics():
     try:
-        creds = ServiceAccountCredentials.from_json_keyfile_name('config.json', scopes=["https://www.googleapis.com/auth/spreadsheets"])
+        creds = ServiceAccountCredentials.from_json_keyfile_name(
+            "config.json", scopes=["https://www.googleapis.com/auth/spreadsheets"]
+        )
         gc = gspread.authorize(creds)
 
-        spreadsheet = gc.open_by_url(url="https://docs.google.com/spreadsheets/d/1cplAy6pfH_X4W-odwuZgaRVuvEfUI88NOAonSkThRbE")
+        spreadsheet = gc.open_by_url(
+            url="https://docs.google.com/spreadsheets/d/1cplAy6pfH_X4W-odwuZgaRVuvEfUI88NOAonSkThRbE"
+        )
         current = spreadsheet.get_worksheet(0)
         col = current.col_values(9)[2:]
     except:
@@ -75,16 +79,35 @@ def update_lyrics():
             data[c] = 1
 
     result = sorted(data.items(), key=lambda x: x[1], reverse=True)
-    result_list = ", ".join([d[0] for d in result]).replace("니엔, ", "").replace("아트아스, ", "")
+    result_list = (
+        ", ".join([d[0] for d in result]).replace("니엔, ", "").replace("아트아스, ", "")
+    )
     pre = "서선유, 김모건, 옹냐, 인턴 이기자, 여비날, 배식, 탈영병, "
 
     final = pre + result_list
 
-    conn = sqlite3.connect(js['database_src'] + 'static.db')
+    conn = sqlite3.connect(js["database_src"] + "static.db")
     cursor = conn.cursor()
 
     cursor.execute(f'UPDATE teams SET name = "{final}" WHERE team = "special2"')
     conn.commit()
+
+
+# while True:
+#     try:
+#         creds = ServiceAccountCredentials.from_json_keyfile_name(
+#             "config.json", scopes=["https://www.googleapis.com/auth/spreadsheets"]
+#         )
+#         gc = gspread.authorize(creds)
+#         spreadsheet = gc.open_by_url(
+#             url="https://docs.google.com/spreadsheets/d/1n8bRCE_OBUOND4pfhlqwEBMR6qifVLyWk5YrHclRWfY"
+#         )
+#         worksheet = spreadsheet.get_worksheet(1)
+
+#         print("Sheet Data Retrieved")
+#         break
+#     except Exception as e:
+#         print("error getting google sheet data.", e)
 
 
 def check_sheet():
@@ -117,24 +140,18 @@ def check_sheet():
         "pungsin": [],
         "freeter": [],
         "rusuk": [],
-        "hikiking": []
+        "hikiking": [],
     }
-    charts = {
-        "total": [],
-        "hourly": [],
-        "daily": [],
-        "weekly": [],
-        "monthly": []
-    }
-    complete = ['hourly']
+    charts = {"total": [], "hourly": [], "daily": [], "weekly": [], "monthly": []}
+    complete = ["hourly"]
 
     now = datetime.now()
     if now.day == 1 and now.hour == 0:
-        complete.append('monthly')
+        complete.append("monthly")
     if now.weekday() == 0 and now.hour == 0:
-        complete.append('weekly')
+        complete.append("weekly")
     if now.hour == 0:
-        complete.append('daily')
+        complete.append("daily")
     if now.hour == 1:
         try:
             update_lyrics()
@@ -143,113 +160,140 @@ def check_sheet():
 
     while True:
         try:
-            creds = ServiceAccountCredentials.from_json_keyfile_name('config.json', scopes=["https://www.googleapis.com/auth/spreadsheets"])
+            creds = ServiceAccountCredentials.from_json_keyfile_name(
+                "config.json", scopes=["https://www.googleapis.com/auth/spreadsheets"]
+            )
             gc = gspread.authorize(creds)
-            spreadsheet = gc.open_by_url(url="https://docs.google.com/spreadsheets/d/1n8bRCE_OBUOND4pfhlqwEBMR6qifVLyWk5YrHclRWfY")
+            spreadsheet = gc.open_by_url(
+                url="https://docs.google.com/spreadsheets/d/1n8bRCE_OBUOND4pfhlqwEBMR6qifVLyWk5YrHclRWfY"
+            )
             worksheet = spreadsheet.get_worksheet(1)
             break
         except:
-            pass
+            print("Error while loading Google Spreadsheet.")
 
-    conn = sqlite3.connect(js['database_src'] + 'charts.db')
+    print("Sheet Data Retrieved")
+
+    conn = sqlite3.connect(js["database_src"] + "charts.db")
     cursor = conn.cursor()
 
     values = worksheet.get_all_values()
-    c = js['column']
+    c = js["column"]
 
     for v in values[1:]:
-        url = v[c['url']]
-        if url == '0':
+        url = v[c["url"]]
+        if url == "0" or url == "":
             continue
 
         try:
-            title = v[c['title']].split(' - ')[1]
+            title = v[c["title"]].split(" - ")[1]
         except IndexError:
             continue
 
-        artist = v[c['title']].split(' - ')[0].replace(' x ', ', ')
-        _id = url.split('/')[-1]
+        artist = v[c["title"]].split(" - ")[0].replace(" x ", ", ")
+        _id = url.split("/")[-1]
 
-        reaction = v[c['reaction']].replace('https://youtu.be/', '')
-        if reaction == '0':
-            reaction = ''
+        reaction = v[c["reaction"]].replace("https://youtu.be/", "")
+        if reaction == "0":
+            reaction = ""
 
+        count = 0
         while True:
-            count = 0
             try:
-                views = YouTube(f'https://youtu.be/{_id}').views
-                if reaction != '':
-                    views += YouTube(f'https://youtu.be/{reaction}').views
+                views = YouTube(f"https://youtu.be/{_id}").views
+                if reaction != "":
+                    views += YouTube(f"https://youtu.be/{reaction}").views
                 break
             except:
                 if count > 5:
-                    query = cursor.execute(f'SELECT * FROM total WHERE id = "{_id}"').fetchone()
+                    query = cursor.execute(
+                        f'SELECT * FROM total WHERE id = "{_id}"'
+                    ).fetchone()
                     if not query:
                         views = 0
                     else:
                         views = int(query[6])
+                    print(f"Failed to get {_id}.")
                     break
                 count += 1
                 pass
 
-        date = v[c['date']].replace('.', '')
-        remix = v[c['remix']]
+        date = v[c["date"]].replace(".", "")
+        remix = v[c["remix"]]
 
-        if now.day == 1 and now.hour == 0:
-            last, last_views = get_last(cursor, _id, 'total')
-            charts["total"].append([_id, title, artist, remix, reaction, date, views, last])
+        if now.weekday() == 0 and now.hour == 0:
+            last, last_views = get_last(cursor, _id, "total")
+            charts["total"].append(
+                [_id, title, artist, remix, reaction, date, views, last]
+            )
         else:
             data = cursor.execute(f'SELECT * FROM total WHERE id = "{_id}"').fetchone()
             l_views = 0
             if data:
                 l_views = data[7]
-            charts["total"].append([_id, title, artist, remix, reaction, date, views, l_views])
+            charts["total"].append(
+                [_id, title, artist, remix, reaction, date, views, l_views]
+            )
 
-        insert(charts, cursor, _id, views, 'hourly')
+        insert(charts, cursor, _id, views, "hourly")
 
         now = datetime.now()
         if now.day == 1 and now.hour == 0:
-            insert(charts, cursor, _id, views, 'monthly')
+            insert(charts, cursor, _id, views, "monthly")
         if now.weekday() == 0 and now.hour == 0:
-            insert(charts, cursor, _id, views, 'weekly')
+            insert(charts, cursor, _id, views, "weekly")
         if now.hour == 0:
-            insert(charts, cursor, _id, views, 'daily')
+            insert(charts, cursor, _id, views, "daily")
 
     for v in values[1:]:
-        url = v[c['url']]
-        if url == '0':
+        url = v[c["url"]]
+        if url == "0":
             continue
-        _id = url.split('/')[-1]
-        artists_rev = {v: k for k, v in js['column'].items()}
+        _id = url.split("/")[-1]
+        artists_rev = {v: k for k, v in js["column"].items()}
         for i in range(22, 56):
             if 23 <= i <= 24 or 31 <= i <= 33:
                 continue
 
-            if v[i] != '':
+            if v[i] != "":
                 try:
                     artists[artists_rev[i]].append(_id)
                 except KeyError:
                     pass
 
-    cursor.execute('DELETE FROM artists')
+    cursor.execute("DELETE FROM artists")
     art = []
     for a in artists:
-        art.append((a, ','.join(artists[a])))
-    cursor.executemany('INSERT INTO artists VALUES(?, ?)', art)
+        art.append((a, ",".join(artists[a])))
+    print("Saved Artists Data Successfully.")
+
+    cursor.executemany("INSERT INTO artists VALUES(?, ?)", art)
     cursor.execute(f'UPDATE updated SET time = "{int(time.time())}"')
 
-    cursor.execute('DELETE FROM total')
-    cursor.executemany('INSERT INTO total VALUES (?, ?, ?, ?, ?, ?, ?, ?)', charts['total'])
+    cursor.execute("DELETE FROM total")
+
+    ids = []
+    total_data = []
+    for ct in charts["total"]:
+        if ct[0] not in ids:
+            ids.append(ct[0])
+            total_data.append(ct)
+
+    cursor.executemany("INSERT INTO total VALUES (?, ?, ?, ?, ?, ?, ?, ?)", total_data)
 
     for t in complete:
-        cursor.execute(f'DELETE FROM {t}')
+        cursor.execute(f"DELETE FROM {t}")
         try:
-            cursor.executemany(f'INSERT INTO {t} VALUES (?, ?, ?, ?)', list(set(charts[t])))
-        except sqlite3.IntegrityError:
-            pass
+            cursor.executemany(
+                f"INSERT INTO {t} VALUES (?, ?, ?, ?)", list(set(charts[t]))
+            )
+        except:
+            print(f"Error while inserting chart data {t}")
 
     conn.commit()
     conn.close()
+
+    print("Saved all data successfully.")
 
 
 for j in range(0, 24):
