@@ -1,3 +1,6 @@
 waktube/**/__pycache__/
-Pipfile
+.vscode/
+
 config.json
+config-old.json
+oauth.json
