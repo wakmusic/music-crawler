@@ -382,7 +382,7 @@ def work() -> None:
 
 def add_work_hourly(scheduler) -> None:
     for j in range(0, 24):
-        h: str = ""
+        h: str = str(j)
         if j < 10:
             h = f"0{str(j)}"
         scheduler.every().day.at(f"{h}:00").do(work)
