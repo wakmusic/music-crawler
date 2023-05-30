@@ -139,7 +139,7 @@ def get_views(conn: Connection, song_id: str, reaction: str) -> int:
     return views
 
 def get_chart(conn: Connection, chart: str) -> Tuple[SelectChartData]:
-    with conn.cursor(Cursor) as cursor:
+    with conn.cursor(DictCursor) as cursor:
         order = "views" if chart == "total" else "increase"
         cursor.execute(f"SELECT * FROM chart_{chart} ORDER BY {order} DESC")
         chart_datas = cursor.fetchall()
