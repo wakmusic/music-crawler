@@ -4,3 +4,4 @@ waktube/**/__pycache__/
 config.json
 config-old.json
 oauth.json
+nohup.out
