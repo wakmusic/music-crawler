@@ -284,7 +284,8 @@ def work() -> None:
         database=config["database"]["name"]
         )
     now = datetime.now()
-
+    
+    print(f"Work {now.hour} started.")
     print("Successfully connected to database.")
 
     if now.hour == 1:
@@ -389,7 +390,7 @@ def add_work_hourly(scheduler) -> None:
 
 if __name__ == "__main__":
     add_work_hourly(schedule)
-
+    print("Wakmusic Crawler v2 started.")
     while True:
         schedule.run_pending()
         time.sleep(1)
