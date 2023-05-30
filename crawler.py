@@ -216,7 +216,7 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
             else:
                 cursor.execute(
                     "DELETE FROM song WHERE song_id=%s",
-                    (db_songs[1],)
+                    (db_song[1],)
                 )
                 del songs_copy[db_song[1]]
         
