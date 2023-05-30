@@ -218,7 +218,6 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
                     "DELETE FROM song WHERE song_id=%s",
                     (db_song[1],)
                 )
-                del songs_copy[db_song[1]]
         
         insert_songs = [tuple(song.values()) for song in songs_copy.values()]
         cursor.executemany(
