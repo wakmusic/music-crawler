@@ -110,7 +110,7 @@ def get_charts_to_update(time: datetime) -> List[str]:
 
     return charts
 
-def get_views(conn: Connection, song_id: str, reaction: str) -> int:
+def get_views(conn: Connection, song_id: str, reaction: str, song_row_id: int) -> int:
     count = 0
     views = 0
     with conn.cursor(Cursor) as cursor:
@@ -124,14 +124,14 @@ def get_views(conn: Connection, song_id: str, reaction: str) -> int:
                 if count > 5:
                     cursor.execute(
                         'SELECT * FROM chart_total WHERE song_id = %s',
-                        (id,)
+                        (song_row_id,)
                     )
                     total = cursor.fetchone()
                     if not total:
                         views = 0
                     else:
                         views = int(total[2])
-                    print(f"Failed to get {id}.")
+                    print(f"Failed to get {song_id}.")
                     break
                 count += 1
                 pass
@@ -161,7 +161,7 @@ def get_all_songs_views(conn: Connection, songs: Tuple[SelectSongData]) -> Dict[
     print("Start getting views from youtube.")
     all_song_views = {}
     for song in songs:
-        views = get_views(conn=conn, song_id=song["song_id"], reaction=song["reaction"])
+        views = get_views(conn=conn, song_id=song["song_id"], reaction=song["reaction"], song_row_id=song["id"])
         all_song_views[song["song_id"]] = views
     
     return all_song_views
@@ -309,7 +309,7 @@ def work() -> None:
             print(e)
             print("Error while loading Google Spreadsheet.")
             time.sleep(2)
-    print("Successfully retrieved spreadsheet.")
+    print("Successfully retrieved song spreadsheet.")
 
     values = worksheet.get_all_values()
     rows = values[1:]
