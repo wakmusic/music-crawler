@@ -1,0 +1,12 @@
+version: "3.3"
+services:
+  crawler:
+    container_name: wakmusic-crawler
+    image: wakmusic-crawler-v2:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./configs:/usr/src/app/configs
+    environment:
+      - TZ=Asia/Seoul

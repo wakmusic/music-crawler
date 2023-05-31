@@ -1,0 +1,14 @@
+.vscode/
+configs/
+database_temp/
+waktube/**/__pycache__/
+
+.gitattributes
+.gitignore
+config.example.json
+docker-compose.yaml
+
+LICENSE
+Pipfile
+Pipfile.lock
+README.md
