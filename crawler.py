@@ -185,10 +185,61 @@ def create_song(conn: Connection, data: InsertSongData) -> bool:
         except:
             return False
         
-def update_lyrics(conn: Connection) -> None:
+def update_lyrics() -> None:
     print("Start Update Lyrics.")
+
+    conn = connect(
+        host=config["database"]["host"], 
+        port=config["database"]["port"], 
+        user=config["database"]["username"], 
+        password=config["database"]["password"], 
+        database=config["database"]["name"]
+    )
+    print("update_lyrics: Successfully connected to database.")
+
+    try:
+        creds = ServiceAccountCredentials.from_json_keyfile_name(
+            "oauth.json", scopes=["https://www.googleapis.com/auth/spreadsheets"]
+        )
+        gc = gspread.authorize(creds)
+
+        spreadsheet = gc.open_by_url(
+            url="https://docs.google.com/spreadsheets/d/1cplAy6pfH_X4W-odwuZgaRVuvEfUI88NOAonSkThRbE"
+        )
+        current = spreadsheet.get_worksheet(0)
+        old = spreadsheet.get_worksheet(1)
+    except:
+        print("update_lyrics: Failed to update lyrics workers.")
+        return
+    
+    current_song_workers = current.col_values(9)[2:]
+    old_workers_songs_rows = old.get_all_values()[1:]
+    workers: Dict[str, int] = {}
+
+    for row in old_workers_songs_rows:
+        if row[4] == "team":
+            continue
+        if row[0] not in workers:
+            workers[row[0]] = 0
+        workers[row[0]] += int(row[3])
+    
+    for worker in current_song_workers:
+        if worker not in workers:
+            workers[worker] = 0
+        workers[worker] += 1
+
+    sorted_workers = sorted(workers.items(), key=lambda x: x[1], reverse=True)
+    
+    result = ", ".join([worker[0] for worker in sorted_workers])
+    special = "서선유, 김모건, 옹냐, 인턴 이기자, 여비날, 배식, 탈영병, "
+    result = result + special
+
     with conn.cursor(cursor=Cursor) as cursor:
-        pass
+        cursor.execute("UPDATE team SET name=%s WHERE team=%s", (result, "special2"))
+    conn.commit()
+    print("update_lyrics: Successfully updated lyrics workers.")
+
+    conn.close()
 
 def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSongData]:
     songs_copy = deepcopy(songs)
@@ -289,7 +340,7 @@ def work() -> None:
 
     if now.hour == 1:
         try:
-            lyric_thread = Thread(target=update_lyrics, args=(conn,))
+            lyric_thread = Thread(target=update_lyrics)
             lyric_thread.start()
         except:
             print("Failed to update lyrics.")
@@ -375,9 +426,9 @@ def work() -> None:
     with conn.cursor(Cursor) as cursor:
         cursor.execute("UPDATE chart_updated SET time = %s", (int(time.time()), ))
     conn.commit()
+    print("Successfully updated wakmusic chart data.")
 
     conn.close()
-    print("Successfully updated wakmusic chart data.")
         
 
 def add_work_hourly(scheduler) -> None:
