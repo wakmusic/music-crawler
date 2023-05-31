@@ -232,7 +232,7 @@ def update_lyrics() -> None:
     
     result = ", ".join([worker[0] for worker in sorted_workers])
     special = "서선유, 김모건, 옹냐, 인턴 이기자, 여비날, 배식, 탈영병, "
-    result = result + special
+    result = special + result
 
     with conn.cursor(cursor=Cursor) as cursor:
         cursor.execute("UPDATE team SET name=%s WHERE team=%s", (result, "special2"))
