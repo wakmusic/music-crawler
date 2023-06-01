@@ -10,3 +10,5 @@ services:
       - ./configs:/usr/src/app/configs
     environment:
       - TZ=Asia/Seoul
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
