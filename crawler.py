@@ -76,7 +76,7 @@ class CurrentRankInfoData(TypedDict):
     current_rank: int
     
 
-with open("config.json", encoding="utf-8-sig") as file:
+with open("./configs/config.json", encoding="utf-8-sig") as file:
     config: Config = json.load(file)
 
 def get_artists(conn: Connection) -> Dict[str, List[Union[str, int, None]]]:
@@ -199,7 +199,7 @@ def update_lyrics() -> None:
 
     try:
         creds = ServiceAccountCredentials.from_json_keyfile_name(
-            "oauth.json", scopes=["https://www.googleapis.com/auth/spreadsheets"]
+            "configs/oauth.json", scopes=["https://www.googleapis.com/auth/spreadsheets"]
         )
         gc = gspread.authorize(creds)
 
@@ -348,7 +348,7 @@ def work() -> None:
     while True:
         try:
             creds = ServiceAccountCredentials.from_json_keyfile_name(
-                filename='oauth.json', scopes=["https://www.googleapis.com/auth/spreadsheets"], 
+                filename='configs/oauth.json', scopes=["https://www.googleapis.com/auth/spreadsheets"], 
             )
             gc = gspread.authorize(creds)
             spreadsheet = gc.open_by_url(
