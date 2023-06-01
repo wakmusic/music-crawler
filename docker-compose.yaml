@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: on-failure
     volumes:
       - ./configs:/usr/src/app/configs
     environment:
