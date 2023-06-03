@@ -382,19 +382,29 @@ def work() -> None:
 
         try:
             title: str = full_title.split(" - ")[1]
-        except IndexError:
+        except:
+            print(f"Failed to get title from full_title: {full_title}")
             continue
         
         artist: str = full_title.split(" - ")[0].replace(" x ", ", ")
-        id = url.split("/")[-1]
+        try:
+            id = url.split("/")[-1]
+        except:
+            print(f"Failed to get song_id from url: {url}")
+            continue
 
         reaction: str = row[columns[config["column"]["reaction"]]]
         reaction = reaction.replace("https://youtu.be/", "")
 
         if reaction == "0":
             reaction = ""
-
-        date: int = int(row[columns[config["column"]["date"]]].replace(".", ""))
+        
+        date_str: str = row[columns[config["column"]["date"]]].replace(".", "")
+        try:
+            date: int = int(date_str)
+        except:
+            print(f"Failed to get date from id : {id}")
+            continue
         remix: str = row[columns[config["column"]["remix"]]]
 
         songs[id] = {
