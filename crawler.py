@@ -11,6 +11,7 @@ from waktube import YouTube
 from typing import Dict, TypedDict, List, Union, Optional, Tuple
 from threading import Thread
 from copy import deepcopy
+from queue import Queue
 
 class Database(TypedDict):
     host: str
@@ -110,7 +111,7 @@ def get_charts_to_update(time: datetime) -> List[str]:
 
     return charts
 
-def get_views(conn: Connection, song_id: str, reaction: str, song_row_id: int) -> int:
+def get_views(conn: Connection, song_id: str, reaction: str, song_row_id: int, queue: Queue) -> None:
     count = 0
     views = 0
     with conn.cursor(Cursor) as cursor:
@@ -136,7 +137,11 @@ def get_views(conn: Connection, song_id: str, reaction: str, song_row_id: int) -
                 count += 1
                 pass
 
-    return views
+    queue.put((song_id, views))
+
+def get_views_many(conn: Connection, queue: Queue, songs: List[Tuple[str, str, int]]) -> None:
+    for song in songs:
+        get_views(conn=conn, song_id=song[0], reaction=song[1], song_row_id=song[2], queue=queue)
 
 def get_chart(conn: Connection, chart: str) -> Tuple[SelectChartData]:
     with conn.cursor(DictCursor) as cursor:
@@ -159,11 +164,32 @@ def get_chart_current_info(chart_datas: Tuple[SelectChartData]) -> Dict[str, Cur
 
 def get_all_songs_views(conn: Connection, songs: Tuple[SelectSongData]) -> Dict[str, int]:
     print("Start getting views from youtube.")
+
+    queue = Queue(maxsize=len(songs))
     all_song_views = {}
+    threads: List[Thread] = []
+    temp_songs: List[Tuple[str, str, int]] = []
+
     for song in songs:
-        views = get_views(conn=conn, song_id=song["song_id"], reaction=song["reaction"], song_row_id=song["id"])
-        all_song_views[song["song_id"]] = views
-    
+        temp_songs.append((song["song_id"], song["reaction"], song["id"]))
+
+        if len(temp_songs) == 30:
+            t = Thread(target=get_views_many, args=(conn, queue, temp_songs))
+            t.start()
+            threads.append(t)
+            temp_songs = []
+
+    if len(temp_songs) != 0:
+        t = Thread(target=get_views_many, args=(conn, queue, temp_songs))
+        t.start()
+        threads.append(t)
+
+    for t in threads:
+        t.join()
+
+    for data in queue.queue:
+        all_song_views[data[0]] = data[1]
+
     return all_song_views
 
 
@@ -286,6 +312,7 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
 def update_charts(conn: Connection, songs: Tuple[SelectSongData], charts: List[str]) -> None:
     print("Start running update_charts.")
     all_song_views = get_all_songs_views(conn=conn, songs=songs)
+    print("update_charts: successfully fetched all songs views.")
 
     with conn.cursor(Cursor) as cursor:
         for chart in charts:
