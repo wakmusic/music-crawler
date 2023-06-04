@@ -461,7 +461,9 @@ def work() -> None:
     update_charts(conn=conn, songs=db_songs, charts=charts)
     
     with conn.cursor(Cursor) as cursor:
-        cursor.execute("UPDATE chart_updated SET time = %s", (int(time.time()), ))
+        chart_updated_time = int(time.time())
+        for chart in charts:
+            cursor.execute("UPDATE chart_updated SET time = %s WHERE type = %s", (chart_updated_time, chart))
     conn.commit()
     print("Successfully updated wakmusic chart data.")
 
