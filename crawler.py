@@ -434,6 +434,9 @@ def work() -> None:
             continue
         remix: str = row[columns[config["column"]["remix"]]]
 
+        start = int(row[columns[config["column"]["start"]]]) if row[columns[config["column"]["start"]]] != "" else 0
+        end = int(row[columns[config["column"]["end"]]]) if row[columns[config["column"]["end"]]] != "" else 0
+
         songs[id] = {
             'song_id': id,
             'title': title,
@@ -441,8 +444,8 @@ def work() -> None:
             'remix': remix,
             'reaction': reaction,
             'date': date,
-            'start': 0,
-            'end': 0
+            'start': start,
+            'end': end
         }
 
         for artist_id, name in config["column"]["artists"].items():
