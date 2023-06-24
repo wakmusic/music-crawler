@@ -434,8 +434,15 @@ def work() -> None:
             continue
         remix: str = row[columns[config["column"]["remix"]]]
 
-        start = int(row[columns[config["column"]["start"]]]) if row[columns[config["column"]["start"]]] != "" else 0
-        end = int(row[columns[config["column"]["end"]]]) if row[columns[config["column"]["end"]]] != "" else 0
+        try:
+            start = int(row[columns[config["column"]["start"]]])
+        except:
+            start = 0
+            
+        try:
+            end = int(row[columns[config["column"]["end"]]]) if row[columns[config["column"]["end"]]] != "" else 0
+        except:
+            end = 0
 
         songs[id] = {
             'song_id': id,
