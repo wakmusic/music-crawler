@@ -379,7 +379,7 @@ def work() -> None:
             )
             gc = gspread.authorize(creds)
             spreadsheet = gc.open_by_url(
-                url="https://docs.google.com/spreadsheets/d/1n8bRCE_OBUOND4pfhlqwEBMR6qifVLyWk5YrHclRWfY"
+                url="https://docs.google.com/spreadsheets/d/1K6x5v0eOdleA6-AVA1rq6rNfIf6PTJhwq_SGCNXtW_g"
             )
             worksheet = spreadsheet.get_worksheet(1)
             break
