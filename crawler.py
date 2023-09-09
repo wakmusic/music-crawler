@@ -26,6 +26,9 @@ class Column(TypedDict):
     reaction: str
     date: str
     remix: str
+    start: str
+    end: str
+    keyword: str
     artists: Dict[str, str]
 
 class Config(TypedDict):
@@ -75,6 +78,10 @@ class CurrentRankInfoData(TypedDict):
     song_id: int
     views: int
     current_rank: int
+
+class SelectKeywordData(TypedDict):
+    id: int
+    keyword: str
     
 
 with open("./configs/config.json", encoding="utf-8-sig") as file:
@@ -352,6 +359,55 @@ def update_artists(conn: Connection, songs: Tuple[SelectSongData], artists_songs
         cursor.executemany("INSERT INTO artist_song (artist_id, song_id) VALUES (%s, %s)", insert_data)
     conn.commit()
 
+def update_keywords(conn: Connection, keywords: List[str]) -> List[str]:
+    keywords_copy = deepcopy(keywords)
+    with conn.cursor(Cursor) as cursor:
+        cursor.execute("SELECT * FROM `keyword`")
+        db_keywords = cursor.fetchall()
+
+        for idx, db_keyword in enumerate(db_keywords):
+            if db_keyword[1] not in keywords_copy:
+                cursor.execute(
+                    "DELETE FROM `keyword` WHERE `keyword` = %s",
+                    (db_keyword[1],)
+                )
+            else:
+                del keywords_copy[keywords_copy.index(db_keyword[1])]
+        
+        cursor.executemany(
+            "INSERT INTO `keyword` (`keyword`) VALUES (%s)",
+            keywords_copy
+        )
+        conn.commit()
+
+    with conn.cursor(DictCursor) as cursor:
+        cursor.execute("SELECT `id`, `keyword` FROM `keyword`")
+        results: Tuple[SelectKeywordData] = cursor.fetchall()
+    
+    return results
+
+def update_keyword_song(conn: Connection, keywords: List[SelectKeywordData], keyword_song: Dict[str, List[str]], songs: Tuple[SelectSongData]) -> None:
+    print("Start running update_keyword_song.")
+    
+    song_dict: Dict[str, int] = {}
+    for song in songs:
+        song_dict[song["song_id"]] = song["id"]
+
+    keyword_dict: Dict[str, SelectKeywordData] = {}
+    for keyword in keywords:
+        keyword_dict[keyword["keyword"]] = keyword
+
+    insert_data = []
+    for keyword, song_ids in keyword_song.items():
+        db_keyword = keyword_dict[keyword]
+        for song_id in song_ids:
+            insert_data.append((db_keyword["id"], song_dict[song_id]))
+
+    with conn.cursor(Cursor) as cursor:
+        cursor.execute("DELETE FROM `keyword_song`")
+        cursor.executemany("INSERT INTO `keyword_song` (`keyword_id`, `song_id`) VALUES (%s, %s)", insert_data)
+    conn.commit()
+
 def work() -> None:
     conn = connect(
         host=config["database"]["host"], 
@@ -398,6 +454,8 @@ def work() -> None:
 
     songs: Dict[str, SongData] = {}
     artists_songs: Dict[str, List[str]] = {}
+    keywords = []
+    keyword_song: Dict[str, List[str]] = {}
 
     for row in rows:
         url: str = row[columns[config["column"]["url"]]]
@@ -444,6 +502,10 @@ def work() -> None:
         except:
             end = 0
 
+        raw_keywords: str = row[columns[config["column"]["keyword"]]]
+        if raw_keywords != None and raw_keywords != "":
+            keywords = raw_keywords.split(",")
+
         songs[id] = {
             'song_id': id,
             'title': title,
@@ -464,10 +526,18 @@ def work() -> None:
                 continue
             
             artists_songs[artist_id].append(id)
+        
+        for keyword in keywords:
+            if keyword not in keyword_song:
+                keyword_song[keyword] = []
+
+            keyword_song[keyword].append(id)
 
     db_songs = update_songs(conn=conn, songs=songs)
+    db_keywords = update_keywords(conn=conn, keywords=list(keyword_song.keys()))
 
     update_artists(conn=conn, songs=db_songs, artists_songs=artists_songs, artists=artists)
+    update_keyword_song(conn=conn, keywords=db_keywords, keyword_song=keyword_song, songs=db_songs)
     update_charts(conn=conn, songs=db_songs, charts=charts)
     
     with conn.cursor(Cursor) as cursor:
@@ -490,6 +560,7 @@ def add_work_hourly(scheduler) -> None:
 if __name__ == "__main__":
     add_work_hourly(schedule)
     print("Wakmusic Crawler v2 started.")
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    work()
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(1)
