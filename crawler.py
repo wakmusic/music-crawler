@@ -269,35 +269,46 @@ def update_lyrics() -> None:
     special = "서선유, 김모건, 옹냐, 인턴 이기자, 여비날, 배식, 탈영병, "
     result = special + result
 
-    with conn.cursor(cursor=Cursor) as cursor:
-        cursor.execute("UPDATE team SET name=%s WHERE team=%s", (result, "special2"))
-    conn.commit()
+    try:
+        with conn.cursor(cursor=Cursor) as cursor:
+            cursor.execute("UPDATE team SET name=%s WHERE team=%s", (result, "special2"))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print("update_lyrics: query failed.")
+        print("error: " + e)
+    finally:
+        conn.close()
+
     print("update_lyrics: Successfully updated lyrics workers.")
 
-    conn.close()
 
 def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSongData]:
     songs_copy = deepcopy(songs)
-    with conn.cursor(Cursor) as cursor:
-        cursor.execute("SELECT * FROM song")
-        db_songs = cursor.fetchall()
 
-        for db_song in db_songs:
-            if db_song[1] in songs_copy:
-                song = songs_copy[db_song[1]]
-                cursor.execute(
-                    "UPDATE song SET title=%s, artist=%s, remix=%s, reaction=%s, date=%s, start=%s, end=%s, `order`=%s WHERE song_id=%s",
-                    (
-                        song["title"], 
-                        song["artist"], 
-                        song["remix"], 
-                        song["reaction"], 
-                        song["date"], 
-                        song["start"], 
-                        song["end"],
-                        song["order"],
-                        song["song_id"]
+    try:
+        with conn.cursor(Cursor) as cursor:
+            cursor.execute("SELECT * FROM song")
+            db_songs = cursor.fetchall()
+
+            for db_song in db_songs:
+                if db_song[1] in songs_copy:
+                    song = songs_copy[db_song[1]]
+                    cursor.execute(
+                        "UPDATE song SET title=%s, artist=%s, remix=%s, reaction=%s, date=%s, start=%s, end=%s, `order`=%s WHERE song_id=%s",
+                        (
+                            song["title"], 
+                            song["artist"], 
+                            song["remix"], 
+                            song["reaction"], 
+                            song["date"], 
+                            song["start"], 
+                            song["end"],
+                            song["order"],
+                            song["song_id"]
+                        )
                     )
+<<<<<<< Updated upstream
                 )
                 del songs_copy[db_song[1]]
             else:
@@ -311,7 +322,27 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
             "INSERT INTO song (song_id, title, artist, remix, reaction, date, start, end, `order`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             insert_songs
         )
+=======
+                    del songs_copy[db_song[1]]
+                else:
+                    cursor.execute(
+                        "DELETE FROM song WHERE song_id=%s",
+                        (db_song[1],)
+                    )
+            
+            insert_songs = [tuple(song.values()) for song in songs_copy.values()]
+            cursor.executemany(
+                "INSERT INTO song (song_id, title, artist, remix, reaction, date, start, end) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                insert_songs
+            )
+
+>>>>>>> Stashed changes
         conn.commit()
+    except Exception as e:
+        conn.rollback()
+
+        print("update_songs: query failed.")
+        print("error: " + e)
     
     with conn.cursor(DictCursor) as cursor:
         cursor.execute("SELECT * FROM song")
@@ -324,26 +355,32 @@ def update_charts(conn: Connection, songs: Tuple[SelectSongData], charts: List[s
     all_song_views = get_all_songs_views(conn=conn, songs=songs)
     print("update_charts: successfully fetched all songs views.")
 
-    with conn.cursor(Cursor) as cursor:
-        for chart in charts:
-            chart_data = get_chart(conn=conn, chart=chart)
-            current_chart_infos: Dict[str, CurrentRankInfoData] = get_chart_current_info(chart_datas=chart_data)
-            chart_input_data = []
-            for song in songs:
-                views = all_song_views[song["song_id"]]
-                if song["id"] in current_chart_infos:
-                    current_chart_info = current_chart_infos[song["id"]]
-                    chart_input_data.append((song["id"], views, (views - current_chart_info["views"]), current_chart_info["current_rank"]))
-                else:
-                    chart_input_data.append((song["id"], views, (views - 0), 0))
-            
-            try:
-                cursor.execute(f"DELETE FROM chart_{chart}")
-                cursor.executemany(f"INSERT INTO chart_{chart} (song_id, views, increase, last) VALUES (%s, %s, %s, %s)", chart_input_data)
-                print(f"Successfully inserted all data to chart {chart}")
-            except:
-                print(f"Failed to insert data to chart {chart}")
+    try:
+        with conn.cursor(Cursor) as cursor:
+            for chart in charts:
+                chart_data = get_chart(conn=conn, chart=chart)
+                current_chart_infos: Dict[str, CurrentRankInfoData] = get_chart_current_info(chart_datas=chart_data)
+                chart_input_data = []
+                for song in songs:
+                    views = all_song_views[song["song_id"]]
+                    if song["id"] in current_chart_infos:
+                        current_chart_info = current_chart_infos[song["id"]]
+                        chart_input_data.append((song["id"], views, (views - current_chart_info["views"]), current_chart_info["current_rank"]))
+                    else:
+                        chart_input_data.append((song["id"], views, (views - 0), 0))
+                
+                try:
+                    cursor.execute(f"DELETE FROM chart_{chart}")
+                    cursor.executemany(f"INSERT INTO chart_{chart} (song_id, views, increase, last) VALUES (%s, %s, %s, %s)", chart_input_data)
+                    print(f"Successfully inserted all data to chart {chart}")
+                except:
+                    print(f"Failed to insert data to chart {chart}")
         conn.commit()
+    except Exception as e:
+        conn.rollback()
+        
+        print("update_charts: query failed.")
+        print("error: " + e)
 
 def update_artists(conn: Connection, songs: Tuple[SelectSongData], artists_songs: Dict[str, List[str]], artists: Dict[str, int]) -> None:
     print("Start running update_artists.")
@@ -356,32 +393,44 @@ def update_artists(conn: Connection, songs: Tuple[SelectSongData], artists_songs
         artist_id = artists[artist_name]
         for song_id in song_ids:
             insert_data.append((artist_id, song_dict[song_id]))
+    try:
+        with conn.cursor(Cursor) as cursor:
+            cursor.execute("DELETE FROM artist_song")
+            cursor.executemany("INSERT INTO artist_song (artist_id, song_id) VALUES (%s, %s)", insert_data)
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
 
-    with conn.cursor(Cursor) as cursor:
-        cursor.execute("DELETE FROM artist_song")
-        cursor.executemany("INSERT INTO artist_song (artist_id, song_id) VALUES (%s, %s)", insert_data)
-    conn.commit()
+        print("update_artists: query failed.")
+        print("error: " + e)
 
 def update_keywords(conn: Connection, keywords: List[str]) -> List[str]:
+    print("Start running update_keywords.")
     keywords_copy = deepcopy(keywords)
-    with conn.cursor(Cursor) as cursor:
-        cursor.execute("SELECT * FROM `keyword`")
-        db_keywords = cursor.fetchall()
+    try:
+        with conn.cursor(Cursor) as cursor:
+            cursor.execute("SELECT * FROM `keyword`")
+            db_keywords = cursor.fetchall()
 
-        for idx, db_keyword in enumerate(db_keywords):
-            if db_keyword[1] not in keywords_copy:
-                cursor.execute(
-                    "DELETE FROM `keyword` WHERE `keyword` = %s",
-                    (db_keyword[1],)
-                )
-            else:
-                del keywords_copy[keywords_copy.index(db_keyword[1])]
-        
-        cursor.executemany(
-            "INSERT INTO `keyword` (`keyword`) VALUES (%s)",
-            keywords_copy
-        )
+            for idx, db_keyword in enumerate(db_keywords):
+                if db_keyword[1] not in keywords_copy:
+                    cursor.execute(
+                        "DELETE FROM `keyword` WHERE `keyword` = %s",
+                        (db_keyword[1],)
+                    )
+                else:
+                    del keywords_copy[keywords_copy.index(db_keyword[1])]
+            
+            cursor.executemany(
+                "INSERT INTO `keyword` (`keyword`) VALUES (%s)",
+                keywords_copy
+            )
         conn.commit()
+    except Exception as e:
+        conn.rollback()
+
+        print("update_keywords: query failed.")
+        print("error: " + e)
 
     with conn.cursor(DictCursor) as cursor:
         cursor.execute("SELECT `id`, `keyword` FROM `keyword`")
@@ -405,11 +454,16 @@ def update_keyword_song(conn: Connection, keywords: List[SelectKeywordData], key
         db_keyword = keyword_dict[keyword]
         for song_id in song_ids:
             insert_data.append((db_keyword["id"], song_dict[song_id]))
+    try:
+        with conn.cursor(Cursor) as cursor:
+            cursor.execute("DELETE FROM `keyword_song`")
+            cursor.executemany("INSERT INTO `keyword_song` (`keyword_id`, `song_id`) VALUES (%s, %s)", insert_data)
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
 
-    with conn.cursor(Cursor) as cursor:
-        cursor.execute("DELETE FROM `keyword_song`")
-        cursor.executemany("INSERT INTO `keyword_song` (`keyword_id`, `song_id`) VALUES (%s, %s)", insert_data)
-    conn.commit()
+        print("update_keyword_song: query failed.")
+        print("error: " + e)
 
 def work() -> None:
     conn = connect(
