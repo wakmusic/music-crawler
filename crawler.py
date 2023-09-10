@@ -308,21 +308,6 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
                             song["song_id"]
                         )
                     )
-<<<<<<< Updated upstream
-                )
-                del songs_copy[db_song[1]]
-            else:
-                cursor.execute(
-                    "DELETE FROM song WHERE song_id=%s",
-                    (db_song[1],)
-                )
-        
-        insert_songs = [tuple(song.values()) for song in songs_copy.values()]
-        cursor.executemany(
-            "INSERT INTO song (song_id, title, artist, remix, reaction, date, start, end, `order`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            insert_songs
-        )
-=======
                     del songs_copy[db_song[1]]
                 else:
                     cursor.execute(
@@ -336,7 +321,6 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
                 insert_songs
             )
 
->>>>>>> Stashed changes
         conn.commit()
     except Exception as e:
         conn.rollback()
