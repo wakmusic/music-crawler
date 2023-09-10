@@ -28,6 +28,7 @@ class Column(TypedDict):
     remix: str
     start: str
     end: str
+    order: str
     keyword: str
     artists: Dict[str, str]
 
@@ -44,6 +45,7 @@ class SongData(TypedDict):
     date: int
     start: int
     end: int
+    order: int
 
 class SelectSongData(TypedDict):
     id: int
@@ -284,7 +286,7 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
             if db_song[1] in songs_copy:
                 song = songs_copy[db_song[1]]
                 cursor.execute(
-                    "UPDATE song SET title=%s, artist=%s, remix=%s, reaction=%s, date=%s, start=%s, end=%s WHERE song_id=%s",
+                    "UPDATE song SET title=%s, artist=%s, remix=%s, reaction=%s, date=%s, start=%s, end=%s, `order`=%s WHERE song_id=%s",
                     (
                         song["title"], 
                         song["artist"], 
@@ -293,6 +295,7 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
                         song["date"], 
                         song["start"], 
                         song["end"],
+                        song["order"],
                         song["song_id"]
                     )
                 )
@@ -501,6 +504,18 @@ def work() -> None:
             end = int(row[columns[config["column"]["end"]]]) if row[columns[config["column"]["end"]]] != "" else 0
         except:
             end = 0
+        
+        try:
+            rawOrder: str = row[columns[config["column"]["order"]]]
+            if rawOrder == "" or rawOrder == None:
+                print(f"Failed to get order from id : {id}")
+                continue
+            rawOrder = rawOrder.replace(",", "")
+            floatOrder = float(rawOrder)
+            order = int(floatOrder * 100)
+        except:
+            print(f"Failed to get order from id : {id}")
+            continue
 
         raw_keywords: str = row[columns[config["column"]["keyword"]]]
         if raw_keywords != None and raw_keywords != "":
@@ -514,7 +529,8 @@ def work() -> None:
             'reaction': reaction,
             'date': date,
             'start': start,
-            'end': end
+            'end': end,
+            'order': order
         }
 
         for artist_id, name in config["column"]["artists"].items():
