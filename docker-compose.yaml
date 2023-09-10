@@ -11,3 +11,8 @@ services:
       - ./configs:/usr/src/app/configs
     environment:
       - TZ=Asia/Seoul
+    deploy:
+      resources:
+        limits:
+          cpus: "0.8"
+          memory: "600MB"
