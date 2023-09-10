@@ -308,7 +308,7 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
         
         insert_songs = [tuple(song.values()) for song in songs_copy.values()]
         cursor.executemany(
-            "INSERT INTO song (song_id, title, artist, remix, reaction, date, start, end) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+            "INSERT INTO song (song_id, title, artist, remix, reaction, date, start, end, `order`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             insert_songs
         )
         conn.commit()
