@@ -576,7 +576,7 @@ def add_work_hourly(scheduler) -> None:
 if __name__ == "__main__":
     add_work_hourly(schedule)
     print("Wakmusic Crawler v2 started.")
-    work()
-    # while True:
-    #     schedule.run_pending()
-    #     time.sleep(1)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
