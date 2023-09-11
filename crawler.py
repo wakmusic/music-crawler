@@ -276,7 +276,7 @@ def update_lyrics() -> None:
     except Exception as e:
         conn.rollback()
         print("update_lyrics: query failed.")
-        print("error: " + e)
+        print(e)
     finally:
         conn.close()
 
@@ -326,7 +326,7 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
         conn.rollback()
 
         print("update_songs: query failed.")
-        print("error: " + e)
+        print(e)
     
     with conn.cursor(DictCursor) as cursor:
         cursor.execute("SELECT * FROM song")
@@ -364,7 +364,7 @@ def update_charts(conn: Connection, songs: Tuple[SelectSongData], charts: List[s
         conn.rollback()
         
         print("update_charts: query failed.")
-        print("error: " + e)
+        print(e)
 
 def update_artists(conn: Connection, songs: Tuple[SelectSongData], artists_songs: Dict[str, List[str]], artists: Dict[str, int]) -> None:
     print("Start running update_artists.")
@@ -386,7 +386,7 @@ def update_artists(conn: Connection, songs: Tuple[SelectSongData], artists_songs
         conn.rollback()
 
         print("update_artists: query failed.")
-        print("error: " + e)
+        print(e)
 
 def update_keywords(conn: Connection, keywords: List[str]) -> List[str]:
     print("Start running update_keywords.")
@@ -447,7 +447,7 @@ def update_keyword_song(conn: Connection, keywords: List[SelectKeywordData], key
         conn.rollback()
 
         print("update_keyword_song: query failed.")
-        print("error: " + e)
+        print(e)
 
 def work() -> None:
     conn = connect(
