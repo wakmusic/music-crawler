@@ -294,24 +294,44 @@ def update_songs(conn: Connection, songs: Dict[str, SongData]) -> Tuple[SelectSo
             for db_song in db_songs:
                 if db_song[1] in songs_copy:
                     song = songs_copy[db_song[1]]
-                    cursor.execute(
-                        "UPDATE song SET title=%s, artist=%s, remix=%s, reaction=%s, date=%s, start=%s, end=%s, `order`=%s WHERE song_id=%s",
-                        (
-                            song["title"], 
-                            song["artist"], 
-                            song["remix"], 
-                            song["reaction"], 
-                            song["date"], 
-                            song["start"], 
-                            song["end"],
-                            song["order"],
-                            song["song_id"]
+                    if db_song[12] != None:
+                        cursor.execute(
+                            "UPDATE song SET title=%s, artist=%s, remix=%s, reaction=%s, date=%s, start=%s, end=%s, `order`=%s, `deleted_at` = NULL WHERE song_id=%s",
+                            (
+                                song["title"], 
+                                song["artist"], 
+                                song["remix"], 
+                                song["reaction"], 
+                                song["date"], 
+                                song["start"], 
+                                song["end"],
+                                song["order"],
+                                song["song_id"]
+                            )
                         )
-                    )
+                    else:
+                        cursor.execute(
+                            "UPDATE song SET title=%s, artist=%s, remix=%s, reaction=%s, date=%s, start=%s, end=%s, `order`=%s WHERE song_id=%s",
+                            (
+                                song["title"], 
+                                song["artist"], 
+                                song["remix"], 
+                                song["reaction"], 
+                                song["date"], 
+                                song["start"], 
+                                song["end"],
+                                song["order"],
+                                song["song_id"]
+                            )
+                        )
+                    
                     del songs_copy[db_song[1]]
                 else:
+                    if db_song[12] != None:
+                        continue
+
                     cursor.execute(
-                        "DELETE FROM song WHERE song_id=%s",
+                        "UPDATE song SET `deleted_at` = UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) WHERE song_id=%s",
                         (db_song[1],)
                     )
             
