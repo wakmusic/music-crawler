@@ -578,6 +578,8 @@ def work() -> None:
         raw_keywords: str = row[columns[config["column"]["keyword"]]]
         if raw_keywords != None and raw_keywords != "":
             keywords = raw_keywords.split(",")
+        else:
+            keywords = []
 
         songs[id] = {
             'song_id': id,
