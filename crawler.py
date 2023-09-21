@@ -269,14 +269,30 @@ def update_lyrics() -> None:
     special = "서선유, 김모건, 옹냐, 인턴 이기자, 여비날, 배식, 탈영병, "
     result = special + result
 
+    team_pc_lyrics = []
+    for idx, value in enumerate(sorted_workers):
+        team_pc_lyrics.append(("가사", value[0], 'lyrics', 'member', idx + 1))
+
     try:
-        with conn.cursor(cursor=Cursor) as cursor:
-            cursor.execute("UPDATE team SET name=%s WHERE team=%s", (result, "special2"))
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        print("update_lyrics: query failed.")
-        print(e)
+        try:
+            with conn.cursor(cursor=Cursor) as cursor:
+                cursor.execute("UPDATE team SET name=%s WHERE team=%s", (result, "special2"))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print("update_lyrics: query 1 failed.")
+            print(e)
+        
+        try:
+            with conn.cursor(Cursor) as cursor:
+                cursor.execute('DELETE FROM team_pc WHERE `type` = %s', ("lyrics",))
+                cursor.executemany("INSERT INTO team_pc (`team`, `member`, `type`, `role`, `order`) VALUES (%s, %s, %s, %s, %s)", team_pc_lyrics)
+            
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print("update_lyrics: query 2 failed.")
+            print(e)
     finally:
         conn.close()
 
