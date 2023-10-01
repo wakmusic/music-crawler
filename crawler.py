@@ -120,37 +120,28 @@ def get_charts_to_update(time: datetime) -> List[str]:
 
     return charts
 
-def get_views(conn: Connection, song_id: str, reaction: str, song_row_id: int, queue: Queue) -> None:
+def get_views(song_id: str, reaction: str, queue: Queue) -> None:
     count = 0
     views = 0
-    with conn.cursor(Cursor) as cursor:
-        while True:
-            try:
-                views = YouTube(f"https://youtu.be/{song_id}").views
-                if reaction != "":
-                    views += YouTube(f"https://youtu.be/{reaction}").views
+    while True:
+        try:
+            views = YouTube(f"https://youtu.be/{song_id}").views
+            if reaction != "":
+                views += YouTube(f"https://youtu.be/{reaction}").views
+            break
+        except:
+            if count > 5:
+                views = 0
+                print(f"Failed to get {song_id}.")
                 break
-            except:
-                if count > 5:
-                    cursor.execute(
-                        'SELECT * FROM chart_total WHERE song_id = %s',
-                        (song_row_id,)
-                    )
-                    total = cursor.fetchone()
-                    if not total:
-                        views = 0
-                    else:
-                        views = int(total[2])
-                    print(f"Failed to get {song_id}.")
-                    break
-                count += 1
-                pass
+            count += 1
+            pass
 
     queue.put((song_id, views))
 
 def get_views_many(conn: Connection, queue: Queue, songs: List[Tuple[str, str, int]]) -> None:
     for song in songs:
-        get_views(conn=conn, song_id=song[0], reaction=song[1], song_row_id=song[2], queue=queue)
+        get_views(song_id=song[0], reaction=song[1], queue=queue)
 
 def get_chart(conn: Connection, chart: str) -> Tuple[SelectChartData]:
     with conn.cursor(DictCursor) as cursor:
@@ -653,6 +644,7 @@ if __name__ == "__main__":
     add_work_hourly(schedule)
     print("Wakmusic Crawler v2 started.")
 
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    work()
+    # while True:
+    #     schedule.run_pending()
+    #     time.sleep(1)
