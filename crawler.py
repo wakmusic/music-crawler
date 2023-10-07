@@ -503,7 +503,7 @@ def work() -> None:
             )
             gc = gspread.authorize(creds)
             spreadsheet = gc.open_by_url(
-                url="https://docs.google.com/spreadsheets/d/1K6x5v0eOdleA6-AVA1rq6rNfIf6PTJhwq_SGCNXtW_g"
+                url="https://docs.google.com/spreadsheets/d/1Qm6ARImDRLWI-j30aJ9nwHou5WvSHgCtqPVyIh69l68"
             )
             worksheet = spreadsheet.get_worksheet(1)
             break
