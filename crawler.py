@@ -611,10 +611,11 @@ def work() -> None:
             artists_songs[artist_id].append(id)
         
         for keyword in keywords:
-            if keyword not in keyword_song:
-                keyword_song[keyword] = []
+            striped_keyword = keyword.strip()
+            if striped_keyword not in keyword_song:
+                keyword_song[striped_keyword] = []
 
-            keyword_song[keyword].append(id)
+            keyword_song[striped_keyword].append(id)
 
     db_songs = update_songs(conn=conn, songs=songs)
     db_keywords = update_keywords(conn=conn, keywords=list(keyword_song.keys()))
