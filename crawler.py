@@ -441,7 +441,7 @@ def update_keywords(conn: Connection, keywords: List[str]) -> List[str]:
         conn.rollback()
 
         print("update_keywords: query failed.")
-        print("error: " + e)
+        print(e)
 
     with conn.cursor(DictCursor) as cursor:
         cursor.execute("SELECT `id`, `keyword` FROM `keyword`")
