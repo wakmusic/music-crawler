@@ -623,8 +623,6 @@ def work() -> None:
 
             keyword_song[striped_keyword].append(id)
 
-    return
-
     db_songs = update_songs(conn=conn, songs=songs)
     db_keywords = update_keywords(conn=conn, keywords=list(keyword_song.keys()))
 
@@ -653,7 +651,7 @@ if __name__ == "__main__":
     add_work_hourly(schedule)
     print("Wakmusic Crawler v2 started.")
 
-    work()
+    # work()
     while True:
         schedule.run_pending()
         time.sleep(1)
