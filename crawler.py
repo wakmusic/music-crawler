@@ -30,6 +30,7 @@ class Column(TypedDict):
     end: str
     order: str
     keyword: str
+    significant: str
     artists: Dict[str, str]
 
 class Config(TypedDict):
@@ -526,6 +527,11 @@ def work() -> None:
     keyword_song: Dict[str, List[str]] = {}
 
     for row in rows:
+        significant: str = row[columns[config["column"]["significant"]]]
+        significant = significant.strip()
+        if significant == "임시삭제":
+            continue
+
         url: str = row[columns[config["column"]["url"]]]
 
         if url == "0" or url == "":
@@ -617,6 +623,8 @@ def work() -> None:
 
             keyword_song[striped_keyword].append(id)
 
+    return
+
     db_songs = update_songs(conn=conn, songs=songs)
     db_keywords = update_keywords(conn=conn, keywords=list(keyword_song.keys()))
 
@@ -645,7 +653,7 @@ if __name__ == "__main__":
     add_work_hourly(schedule)
     print("Wakmusic Crawler v2 started.")
 
-    # work()
+    work()
     while True:
         schedule.run_pending()
         time.sleep(1)
