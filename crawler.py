@@ -532,6 +532,9 @@ def update_keyword_song(
 
     insert_data = []
     for keyword, song_ids in keyword_song.items():
+        if keyword not in keyword_dict:
+            continue
+        
         db_keyword = keyword_dict[keyword]
         for song_id in song_ids:
             insert_data.append((db_keyword["id"], song_dict[song_id]))
@@ -695,11 +698,11 @@ def work() -> None:
             artists_songs[artist_id].append(id)
 
         for keyword in keywords:
-            striped_keyword = keyword.strip()
-            if striped_keyword not in keyword_song:
-                keyword_song[striped_keyword] = []
+            processed_keyword = keyword.strip().lower()
+            if processed_keyword not in keyword_song:
+                keyword_song[processed_keyword] = []
 
-            keyword_song[striped_keyword].append(id)
+            keyword_song[processed_keyword].append(id)
 
     db_songs = update_songs(conn=conn, songs=songs)
     db_keywords = update_keywords(conn=conn, keywords=list(keyword_song.keys()))
