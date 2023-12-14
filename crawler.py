@@ -291,14 +291,18 @@ def update_lyrics() -> None:
         workers[worker] += 1
 
     sorted_workers = sorted(workers.items(), key=lambda x: x[1], reverse=True)
+    worker_names = list(map(lambda x: x[0], sorted_workers))
 
     result = ", ".join([worker[0] for worker in sorted_workers])
     special = "서선유, 김모건, 옹냐, 인턴 이기자, 여비날, 배식, 탈영병, "
     result = special + result
 
+    
+    pc_lyrics_const = ['감람스톤', '활짝핀웃음꽃', '샤비라비', '아기독수리이', 'Lami']
+
     team_pc_lyrics = []
-    for idx, value in enumerate(sorted_workers):
-        team_pc_lyrics.append(("가사", value[0], "lyrics", "member", idx + 1))
+    for idx, value in enumerate(pc_lyrics_const + worker_names):
+        team_pc_lyrics.append(("가사", value, "lyrics", "member", idx + 1))
 
     try:
         try:
